@@ -2,6 +2,7 @@
 Homeworks and projects about Scientific Computing course
 
 En este archivo se encuentran las clases de soporte para ejecutar el método de Montecarlo.
+El código está escrito en lenguaje Python en su versión 3.
 Existe una clase Función que implementa la función a integrar. Para este caso en particular la función de distribución de energía en el decaimiento del neutrón.
 Esta función se extrae el libro de Introduction to elementary Particles de Griffiths, en la sección 9.3 página 318.
 
