@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 from scipy import constants # type: ignore
 import numpy as np
+import multiprocessing as mp
+import time
 
 class Funcion():
     #-Definición de constantes para la función*
@@ -31,12 +33,12 @@ class Montecarlo():
     def __init__(self):
         pass
 
-    def calcIntegral(self,f,x1,x2,NIter):
+    def calcIntegral(self,f,x1,x2,nSamples):
         sum = 0.0
-        xr = np.random.uniform(x1,x2,NIter)
-        for i in range(NIter):
+        xr = np.random.uniform(x1,x2,nSamples)
+        for i in range(nSamples):
             sum += f(xr[i])
-        return (sum/NIter)*(x2-x1)
+        return (sum/nSamples)*(x2-x1)
 
 def main():
     #Intervalo de trabajo para la función particular
@@ -61,15 +63,37 @@ def main():
     #Calcular el resultado de la integral
     resultadoSoftware = factor1*factor2*factor3*factor4
     
-    print("cálculo final del libro de Griffiths: ", resultadoGriffiths)
-    print("cálculo final constantes actuales: ", resultadoSoftware)
+    print("cálculo final del libro de Griffiths: ", resultadoGriffiths,", tao =",1.0/resultadoGriffiths)
+    print("cálculo final constantes actuales: ", resultadoSoftware,", tao =",1.0/resultadoSoftware)
     
     #Llamado al método de la clase para calcular integral con Montecarlo
-    noIter = 10000000
+    #nSamples = 100000  #Fijando el número de muestras en cien mil
+    nSamples = 500000    #Fijando el número de muestras 
     mc = Montecarlo() #Instanciación de la clase en el objeto mc
-    Gamma = mc.calcIntegral(funcion.f,x1,x2,noIter)
+    #-----------------------------------------------------------------------
+    print("Ejecutar proceso serialmente")
+    tic = time.time()
+    Gamma = mc.calcIntegral(funcion.f,x1,x2,nSamples)
+    tac = time.time()
     print("Cálculo obtenido con Montecarlo: ", Gamma)
-
-
+    print("Tiempo de vida = 1/Gamma =", 1.0/Gamma, "contra",1.0/resultadoSoftware,"de la ref. con constantes actualizadas.")
+    print("proceso completado en",tac-tic,"segundos")
+    #-----------------------------------------------------------------------
+    print("Ahora para ejecutar en paralelo")
+    div = (x2-x1)/10.0  #Se eligen 10 sub-intervalos
+    nSamples = int(nSamples/10);
+    subInterv = [i for i in np.arange(0.511,1.29,div)]    
+    tic = time.time()
+    pool = mp.Pool(mp.cpu_count())
+    lstParall=[pool.apply_async(mc.calcIntegral,args=(funcion.f,xx,xx+div,nSamples,)) for xx in subInterv]
+    pool.close()
+    pool.join()
+    tac = time.time()
+    results = [r.get() for r in lstParall]
+    Gamma = np.sum(results)
+    print("proceso completado en",tac-tic,"segundos")
+    print("Cálculo obtenido con Montecarlo: ", Gamma)
+    print("Tiempo de vida = 1/Gamma =", 1.0/Gamma, "contra",1.0/resultadoSoftware,"de la ref. con constantes actualizadas.")
+    
 if __name__ == "__main__":
     main()
